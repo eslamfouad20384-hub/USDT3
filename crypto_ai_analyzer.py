@@ -9,7 +9,7 @@ import google.generativeai as genai
 # 🔒 جلب المفتاح من Environment Variable
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    st.error("مفتاح Gemini API مش موجود! حط المفتاح في Environment Variable باسم GEMINI_API_KEY")
+    st.error("مفتاح Gemini API مش موجود! حط المفتاح في Secrets باسم GEMINI_API_KEY")
     st.stop()
 
 genai.configure(api_key=api_key)
@@ -17,9 +17,8 @@ genai.configure(api_key=api_key)
 st.set_page_config(layout="wide")
 st.title("🚀 Crypto AI Analyzer PRO - النسخة المحسنة")
 
-# اختيار مدة البيانات التاريخية
 days = st.selectbox("مدة البيانات التاريخية", ["90","365"])
-days = int(days)  # تحويلها لرقم صحيح
+days = int(days)
 
 if st.button("فلتر أفضل 10 عملات"):
 
@@ -34,7 +33,7 @@ if st.button("فلتر أفضل 10 عملات"):
         coin_symbol = c['symbol'].upper()
         coin_id = c['id']
 
-        # 1️⃣ بيانات CryptoCompare Daily
+        # جلب بيانات التاريخية
         try:
             url = f"https://min-api.cryptocompare.com/data/v2/histoday?fsym={coin_symbol}&tsym=USD&limit={days}"
             r = requests.get(url).json()
@@ -63,16 +62,14 @@ if st.button("فلتر أفضل 10 عملات"):
         macd_val = df["MACD"].iloc[-1]
         macd_signal = df["MACD_SIGNAL"].iloc[-1]
 
-        # Volume Profile
         vp = df.groupby(pd.cut(df["close"], 20))["volumeto"].sum()
         vp_zone = vp.idxmax()
         vp_range = f"{vp_zone.left:.2f} - {vp_zone.right:.2f} USD"
 
-        # كشف زيادة حجم التداول (الحيتان 🐋)
         volume_spike = volume > df["volumeto"].mean() * 2
         whale_flag = "🚨 تجمع حيتان" if volume_spike else ""
 
-        # 2️⃣ الماركت كاب والترتيب من CoinGecko
+        # MarketCap و Rank
         try:
             cg = requests.get(f"https://api.coingecko.com/api/v3/coins/{coin_id}").json()
             marketcap = cg.get("market_data", {}).get("market_cap", {}).get("usd", None)
@@ -82,7 +79,7 @@ if st.button("فلتر أفضل 10 عملات"):
         except:
             continue
 
-        # 3️⃣ حساب Score محسّن
+        # Score
         score = 0
         if rsi < 35: score += 2
         if ema20_val > ema50_val: score += 2
@@ -122,7 +119,7 @@ if st.button("فلتر أفضل 10 عملات"):
         if coin["Whale"]:
             st.success(coin["Whale"])
 
-        # إرسال البيانات لـ Gemini AI
+        # تحليل AI باستخدام موديل متاح
         prompt = f"""
         حلل العملة التالية:
 
@@ -150,7 +147,7 @@ if st.button("فلتر أفضل 10 عملات"):
         st.write("🤖 تحليل AI:")
         try:
             with st.spinner("جاري تحليل AI ..."):
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-1.5")  # موديل موجود
                 response = model.generate_content(prompt)
                 st.write(response.text)
         except Exception as e:
