@@ -15,8 +15,9 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 st.set_page_config(layout="wide")
-st.title("🚀 Crypto AI Analyzer PRO - النسخة المحسنة")
+st.title("🚀 Crypto AI Analyzer PRO - النسخة المحسنة بالقوة")
 
+# اختيار مدة البيانات التاريخية
 days = st.selectbox("مدة البيانات التاريخية", ["90","365"])
 days = int(days)
 
@@ -33,7 +34,7 @@ if st.button("فلتر أفضل 10 عملات"):
         coin_symbol = c['symbol'].upper()
         coin_id = c['id']
 
-        # جلب بيانات التاريخية
+        # جلب البيانات التاريخية
         try:
             url = f"https://min-api.cryptocompare.com/data/v2/histoday?fsym={coin_symbol}&tsym=USD&limit={days}"
             r = requests.get(url).json()
@@ -62,6 +63,7 @@ if st.button("فلتر أفضل 10 عملات"):
         macd_val = df["MACD"].iloc[-1]
         macd_signal = df["MACD_SIGNAL"].iloc[-1]
 
+        # Volume Profile
         vp = df.groupby(pd.cut(df["close"], 20))["volumeto"].sum()
         vp_zone = vp.idxmax()
         vp_range = f"{vp_zone.left:.2f} - {vp_zone.right:.2f} USD"
@@ -119,7 +121,7 @@ if st.button("فلتر أفضل 10 عملات"):
         if coin["Whale"]:
             st.success(coin["Whale"])
 
-        # تحليل AI باستخدام موديل متاح
+        # تحليل AI بالقوة باستخدام Gemini 3 Pro
         prompt = f"""
         حلل العملة التالية:
 
@@ -147,7 +149,7 @@ if st.button("فلتر أفضل 10 عملات"):
         st.write("🤖 تحليل AI:")
         try:
             with st.spinner("جاري تحليل AI ..."):
-                model = genai.GenerativeModel("gemini-1.5")  # موديل موجود
+                model = genai.GenerativeModel("models/gemini-3-pro")
                 response = model.generate_content(prompt)
                 st.write(response.text)
         except Exception as e:
