@@ -15,11 +15,26 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 st.set_page_config(layout="wide")
-st.title("🚀 Crypto AI Analyzer PRO - النسخة المحسنة بالقوة")
+st.title("🚀 Crypto AI Analyzer PRO - النسخة المحسّنة بالقوة")
 
 # اختيار مدة البيانات التاريخية
 days = st.selectbox("مدة البيانات التاريخية", ["90","365"])
 days = int(days)
+
+# دالة لجلب أقوى موديل يدعم generateContent
+def get_best_model():
+    models = genai.list_models()
+    for m in models:
+        if "generateContent" in m.supported_generation_methods:
+            # نختار أول موديل قوي موجود
+            return m.name
+    return None
+
+best_model = get_best_model()
+if not best_model:
+    st.error("❌ مفيش موديل يدعم generateContent في حسابك دلوقتي")
+    st.stop()
+st.info(f"الموديل المستخدم للتحليل AI: {best_model}")
 
 if st.button("فلتر أفضل 10 عملات"):
 
@@ -121,7 +136,7 @@ if st.button("فلتر أفضل 10 عملات"):
         if coin["Whale"]:
             st.success(coin["Whale"])
 
-        # تحليل AI بالقوة باستخدام Gemini 3 Pro
+        # تحليل AI بالقوة باستخدام أفضل موديل متاح
         prompt = f"""
         حلل العملة التالية:
 
@@ -149,7 +164,7 @@ if st.button("فلتر أفضل 10 عملات"):
         st.write("🤖 تحليل AI:")
         try:
             with st.spinner("جاري تحليل AI ..."):
-                model = genai.GenerativeModel("models/gemini-3-pro")
+                model = genai.GenerativeModel(best_model)
                 response = model.generate_content(prompt)
                 st.write(response.text)
         except Exception as e:
